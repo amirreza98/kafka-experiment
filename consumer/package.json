@@ -1,0 +1,10 @@
+{
+  "name": "consumer",
+  "version": "1.0.0",
+  "private": true,
+  "main": "consumer.js",
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "ws": "^8.18.0"
+  }
+}

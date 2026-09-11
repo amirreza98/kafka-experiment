@@ -1,0 +1,15 @@
+# dependencies (each service installs its own)
+node_modules/
+
+# build output
+dist/
+dist-ssr/
+
+# env / local overrides
+.env
+.env.*
+*.local
+
+# logs
+npm-debug.log*
+*.log
