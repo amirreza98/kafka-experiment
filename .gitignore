@@ -13,3 +13,5 @@ dist-ssr/
 # logs
 npm-debug.log*
 *.log
+
+.gitignore

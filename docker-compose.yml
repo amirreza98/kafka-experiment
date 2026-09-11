@@ -49,7 +49,7 @@ services:
           target: /app
 
   frontend-client:
-    build: ./frontend/client
+    build: ./frontend
     container_name: frontend-client
     depends_on:
       - consumer
@@ -58,5 +58,5 @@ services:
     develop:
       watch:
         - action: sync+restart
-          path: ./frontend/client
+          path: ./frontend
           target: /app

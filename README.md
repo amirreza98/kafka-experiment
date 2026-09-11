@@ -66,9 +66,9 @@ docker exec -it kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-serve
 
 ## Frontend — Kafka Cannon
 
-`frontend/client/` is a React visualization of the pipeline: every trade
-Kafka delivers is fired as a coin from an aimable cannon into one of three
-pools (standing in for consumers), so the aim angle demonstrates how a load
+`frontend/` is a React visualization of the pipeline: every trade Kafka
+delivers is fired as a coin from an aimable cannon into one of three pools
+(standing in for consumers), so the aim angle demonstrates how a load
 balancer routes messages.
 
 Browsers can't speak Kafka's protocol directly, so `consumer/` doubles as
@@ -90,8 +90,7 @@ consumer/ # consumer: Kafka -> prints + broadcasts over WebSocket
 consumer.js
 Dockerfile
 package.json
-frontend/
-client/ # React app: cannon/pools visualization
+frontend/ # React app: cannon/pools visualization
 src/
 Dockerfile
 package.json
