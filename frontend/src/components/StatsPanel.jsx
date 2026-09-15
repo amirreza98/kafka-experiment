@@ -1,7 +1,7 @@
 import { COINS } from "../lib/coins.js";
 
-export default function StatsPanel({ status, received, processed }) {
-  const lag = Math.max(0, received - processed);
+export default function StatsPanel({ status, received, processed, missed }) {
+  const lag = Math.max(0, received - processed - missed);
 
   return (
     <div className="panel stats-panel">
@@ -13,21 +13,29 @@ export default function StatsPanel({ status, received, processed }) {
       <div className="totals-row">
         <div>
           <div className="stat-num">{received}</div>
-          <div className="stat-label">trades from Kafka</div>
+          <div className="stat-label">trades</div>
         </div>
         <div>
           <div className="stat-num">{processed}</div>
           <div className="stat-label">delivered</div>
         </div>
         <div>
+          <div className="stat-num stat-num-danger">{missed}</div>
+          <div className="stat-label">missed</div>
+        </div>
+        <div>
           <div className="stat-num stat-num-warn">{lag}</div>
-          <div className="stat-label">lag (waiting)</div>
+          <div className="stat-label">lag</div>
         </div>
       </div>
 
       <div className="legend">
         {Object.entries(COINS).map(([symbol, c]) => (
-          <span className="legend-chip" key={symbol} style={{ background: c.color, color: c.text }}>
+          <span
+            className="legend-chip"
+            key={symbol}
+            style={{ background: c.color, color: c.text }}
+          >
             {c.label}
           </span>
         ))}

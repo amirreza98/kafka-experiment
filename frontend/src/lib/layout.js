@@ -1,36 +1,54 @@
-// Shared logical coordinate space for the canvas scene.
-export const WIDTH = 960;
-export const HEIGHT = 600;
+// Proportional layout so the scene can fill whatever size canvas it's
+// given (the whole viewport) instead of a fixed logical resolution.
+export function computeLayout(w, h) {
+  const poolWidth = Math.max(150, Math.min(240, w * 0.22));
+  const poolHeight = Math.max(180, h * 0.5);
+  const poolX = w * 0.06;
+  const poolY = h * 0.08;
 
-// The pool is the Kafka queue itself: trades fall in from the top and pile
-// up here, oldest at the bottom, until the gun drains them one at a time.
-export const POOL = { x: 70, y: 60, width: 200, height: 260 };
-export const POOL_DROP_X = POOL.x + POOL.width / 2;
+  const pipeTop = { x: poolX + poolWidth / 2, y: poolY + poolHeight };
+  const gunPivot = { x: pipeTop.x, y: Math.min(h - 70, pipeTop.y + h * 0.16) };
+  const barrelLen = Math.max(50, Math.min(90, w * 0.075));
 
-// The gun is fed by a pipe from the bottom of the pool — it can only hold
-// (and fire) one message at a time, same as a consumer processing serially.
-export const PIPE_TOP = { x: POOL.x + POOL.width / 2, y: POOL.y + POOL.height };
-export const GUN_PIVOT = { x: PIPE_TOP.x, y: PIPE_TOP.y + 92 };
-export const BARREL_LEN = 76;
+  const aim = { x: w - Math.max(120, Math.min(220, w * 0.16)), y: h * 0.48 };
+  const holeRadius = Math.max(16, Math.min(30, w * 0.02));
+  const missRange = holeRadius * 5.5; // how far a bad angle can drift the shot from the slot
 
-// Fixed downstream target — rotating the gun never changes *where* a shot
-// lands, only *how long* it takes to get there.
-export const AIM = { x: WIDTH - 150, y: 300 };
+  return {
+    pool: { x: poolX, y: poolY, width: poolWidth, height: poolHeight },
+    pipeTop,
+    gunPivot,
+    barrelLen,
+    aim,
+    holeRadius,
+    missRange,
+  };
+}
 
-// Angle is measured from horizontal: 0 = flat, fastest shot; ANGLE_MAX =
-// steep lob, slowest shot. This is the "latency dial" for the demo.
+// Angle aims the shot: near the middle of the range lines it up with the
+// piggy bank's slot; drift too far off-center and it misses the hole
+// entirely — wasted, counted as a miss instead of delivered.
 export const ANGLE_MIN = 0;
-export const ANGLE_MAX = 68;
+export const ANGLE_MAX = 65;
+const ANGLE_CENTER = (ANGLE_MIN + ANGLE_MAX) / 2;
+const ANGLE_HALF_SPAN = (ANGLE_MAX - ANGLE_MIN) / 2;
 
-const FLIGHT_MS_MIN = 260;
-const FLIGHT_MS_MAX = 1900;
-
-export function angleToFlightMs(angleDeg) {
-  const t = (angleDeg - ANGLE_MIN) / (ANGLE_MAX - ANGLE_MIN);
-  return FLIGHT_MS_MIN + t * (FLIGHT_MS_MAX - FLIGHT_MS_MIN);
+// Where a shot fired at this angle actually ends up, horizontally, relative
+// to the piggy bank's slot (aim.x). 0 = dead center on the slot.
+export function angleToOffset(angleDeg, missRange) {
+  const t = (angleDeg - ANGLE_CENTER) / ANGLE_HALF_SPAN; // -1..1
+  return t * missRange;
 }
 
-export function angleToArcHeight(angleDeg) {
-  const t = (angleDeg - ANGLE_MIN) / (ANGLE_MAX - ANGLE_MIN);
-  return 40 + t * 190;
-}
+// Speed is the actual latency dial: how long one fired coin takes to reach
+// the downstream consumer, once it's been fired.
+export const SPEED_MIN_MS = 5;
+export const SPEED_MAX_MS = 300;
+export const SPEED_DEFAULT_MS = 250;
+
+// Rate is how often the gun fires the next coin — independent of how long
+// each individual coin then takes in flight. A fast rate with slow latency
+// means many coins in the air at once.
+export const RATE_MIN_MS = 10;
+export const RATE_MAX_MS = 100;
+export const RATE_DEFAULT_MS = 50;
