@@ -24,6 +24,7 @@ services:
       - kafka
     environment:
       KAFKA_BROKER: kafka:19092
+      LOG_TRADES: "false"
     restart: on-failure
     develop:
       watch:

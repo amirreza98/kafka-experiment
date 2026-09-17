@@ -8,6 +8,7 @@ import { useTradeSocket } from "./hooks/useTradeSocket.js";
 import { ANGLE_MIN, ANGLE_MAX, SPEED_DEFAULT_MS, RATE_DEFAULT_MS } from "./lib/layout.js";
 
 const FLUSH_MS = 50;
+const QUEUE_POLL_MS = 250;
 
 function formatLine(trade, arrow, suffix) {
   const time = new Date(trade.T).toLocaleTimeString();
@@ -24,9 +25,12 @@ export default function App() {
   const [paused, setPaused] = useState(false);
   const [processed, setProcessed] = useState(0);
   const [missed, setMissed] = useState(0);
+  const [queueLen, setQueueLen] = useState(0);
+  const [queueTrend, setQueueTrend] = useState("flat");
 
   const queueBufferRef = useRef([]);
   const consumerBufferRef = useRef([]);
+  const prevQueueLenRef = useRef(0);
 
   const handleTrade = useCallback((trade) => {
     sceneRef.current?.spawnTrade(trade);
@@ -58,10 +62,29 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    const id = setInterval(() => {
+      const len = sceneRef.current?.getQueueLength() ?? 0;
+      const prevLen = prevQueueLenRef.current;
+      prevQueueLenRef.current = len;
+      setQueueLen(len);
+      if (len > prevLen) setQueueTrend("up");
+      else if (len < prevLen) setQueueTrend("down");
+    }, QUEUE_POLL_MS);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="app">
       <Header />
-      <StatsPanel status={status} received={received} processed={processed} missed={missed} />
+      <StatsPanel
+        status={status}
+        received={received}
+        processed={processed}
+        missed={missed}
+        queueLen={queueLen}
+        queueTrend={queueTrend}
+      />
       <div className="app-main">
         <Scene
           ref={sceneRef}

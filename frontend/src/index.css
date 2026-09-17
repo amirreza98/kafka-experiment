@@ -234,6 +234,14 @@ body {
   color: #ff5c5c;
 }
 
+.stat-num-up {
+  color: #ff5c5c;
+}
+
+.stat-num-down {
+  color: #4ade80;
+}
+
 .stat-label {
   font-size: 11px;
   color: var(--text-dim);

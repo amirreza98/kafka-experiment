@@ -41,7 +41,6 @@ const Scene = forwardRef(function Scene({ angle, onAngleChange, speedMs, rateMs,
   const canvasRef = useRef(null);
   const poolRef = useRef([]); // queue: index 0 = oldest = next to fire
   const activeListRef = useRef([]); // coins currently loading/flying/settling, several at once
-  const lastFireRef = useRef(-Infinity);
   const fireTimesRef = useRef([]); // timestamps of recent shots, for a measured shots/sec readout
   const deliverTimesRef = useRef([]); // timestamps of recent hits, for a measured deliveries/sec readout
   const particlesRef = useRef([]);
@@ -78,6 +77,9 @@ const Scene = forwardRef(function Scene({ angle, onAngleChange, speedMs, rateMs,
         renderX: pool.x + pool.width / 2,
         renderY: -20,
       });
+    },
+    getQueueLength() {
+      return poolRef.current.length;
     },
   }));
 
@@ -125,12 +127,27 @@ const Scene = forwardRef(function Scene({ angle, onAngleChange, speedMs, rateMs,
     // previously-fired coins are still taking to land — several can be
     // loading/flying/settling at once. Paused just stops this; spawnTrade
     // above keeps filling the pool regardless.
-    function tryStartFeed(now, layout) {
+    //
+    // Runs on its own setTimeout chain rather than inside the rAF draw loop:
+    // rAF caps out at the display's refresh rate (~60Hz, one opportunity
+    // every ~16.7ms), so any rateMs below that was physically unreachable
+    // and the measured rate would just track dropped/late frames instead of
+    // the slider. A self-rescheduling timeout isn't tied to paint at all, so
+    // it can actually hit low rateMs values and reads the live rateRef on
+    // every tick, so slider changes take effect on the very next shot.
+    let fireTimeoutId = null;
+    function scheduleFire() {
+      fireTimeoutId = setTimeout(() => {
+        tryStartFeed(performance.now());
+        scheduleFire();
+      }, rateRef.current);
+    }
+
+    function tryStartFeed(now) {
       if (pausedRef.current) return;
       if (poolRef.current.length === 0) return;
-      if (now - lastFireRef.current < rateRef.current) return;
+      const layout = layoutRef.current;
       const item = poolRef.current.shift();
-      lastFireRef.current = now;
       fireTimesRef.current.push(now);
       activeListRef.current.push({
         ...item,
@@ -144,6 +161,7 @@ const Scene = forwardRef(function Scene({ angle, onAngleChange, speedMs, rateMs,
         y: item.renderY,
       });
     }
+    scheduleFire();
 
     // Drops timestamps older than a second and returns how many are left —
     // a live rate/sec reading instead of a static config number.
@@ -348,7 +366,6 @@ const Scene = forwardRef(function Scene({ angle, onAngleChange, speedMs, rateMs,
       if (missFlash > 0) missFlashRef.current = Math.max(0, missFlash - 0.04);
 
       // coins currently loading / flying / settling — several in the air at once
-      tryStartFeed(now, layout);
       const activeList = activeListRef.current;
       for (let i = activeList.length - 1; i >= 0; i--) {
         const active = activeList[i];
@@ -435,6 +452,7 @@ const Scene = forwardRef(function Scene({ angle, onAngleChange, speedMs, rateMs,
     return () => {
       ro.disconnect();
       cancelAnimationFrame(rafId);
+      clearTimeout(fireTimeoutId);
     };
   }, [onDelivered, onMissed]);
 

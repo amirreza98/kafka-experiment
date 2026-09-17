@@ -1,7 +1,8 @@
 import { COINS } from "../lib/coins.js";
 
-export default function StatsPanel({ status, received, processed, missed }) {
+export default function StatsPanel({ status, received, processed, missed, queueLen, queueTrend }) {
   const lag = Math.max(0, received - processed - missed);
+  const queueClass = queueTrend === "up" ? " stat-num-up" : queueTrend === "down" ? " stat-num-down" : "";
 
   return (
     <div className="panel stats-panel">
@@ -12,8 +13,8 @@ export default function StatsPanel({ status, received, processed, missed }) {
 
       <div className="totals-row">
         <div>
-          <div className="stat-num">{received}</div>
-          <div className="stat-label">trades</div>
+          <div className={`stat-num${queueClass}`}>{queueLen}</div>
+          <div className="stat-label">in queue</div>
         </div>
         <div>
           <div className="stat-num">{processed}</div>
